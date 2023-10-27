@@ -48,7 +48,7 @@ def login():
     group = datum.find_one({"groupNo": request.json["groupNo"]})
     client.close()
     if(group):
-        if(bcrypt.check_password_hash(request.json["password"], group["password"])):
+        if(bcrypt.check_password_hash(group["password"]), request.json["password"]):
             return {"res": "success"}
     return {"res": "fail"}
 
@@ -62,7 +62,7 @@ def create_user():
     datum = db[MONGODB_COLLECTION]
     userList = request.json["userList"].copy()
     for u in userList:
-        u["password"] = bcrypt.generate_password_hash(u["password"]).decode("utf-8") 
+        u["password"] = bcrypt.generate_password_hash(u["password"])
     print(userList)
     res = datum.insert_many(userList)
     if res:

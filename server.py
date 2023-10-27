@@ -62,7 +62,7 @@ def create_user():
     datum = db[MONGODB_COLLECTION]
     userList = request.json["userList"].copy()
     for u in userList:
-        u["password"] = bcrypt.generate_password_hash(u["password"])
+        u["password"] = bcrypt.generate_password_hash(u["password"]).decode("utf-8") 
     print(userList)
     res = datum.insert_many(userList)
     if res:

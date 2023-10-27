@@ -48,7 +48,7 @@ def login():
     group = datum.find_one({"groupNo": request.json["groupNo"]})
     client.close()
     if(group):
-        if(bcrypt.check_password_hash(group["password"]), request.json["password"]):
+        if(bcrypt.check_password_hash(group["password"], request.json["password"])):
             return {"res": "success"}
     return {"res": "fail"}
 

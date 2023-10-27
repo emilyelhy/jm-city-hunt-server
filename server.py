@@ -35,7 +35,7 @@ def validate_distance(lat1, lon1, lat2, lon2):
 @app.route('/', methods=['GET'])
 def test():
     print("[Flask server.py] GET path /")
-    return {"res": "success"}
+    return {"res": True}
 
 # handling login requests from react
 # param: object of groupNo and password
@@ -50,8 +50,8 @@ def login():
     client.close()
     if(group):
         if(bcrypt.check_password_hash(group["password"], request.json["password"])):
-            return {"res": "success"}
-    return {"res": "fail"}
+            return {"res": True}
+    return {"res": False}
 
 # handling create user requests from REST API directly
 # param: list named as userList containing all user's groupNo and password as object
@@ -69,8 +69,8 @@ def create_user():
     res = datum.insert_many(userList)
     client.close()
     if res:
-        return {"res": "success"}
-    return {"res": "fail"}
+        return {"res": True}
+    return {"res": False}
 
 # handling password changing request from react
 # param: object of groupNo, oldPassword, and newPassword

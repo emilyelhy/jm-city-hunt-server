@@ -1,16 +1,18 @@
 from pymongo import MongoClient
 from flask import Flask, request
 from flask_cors import CORS
+from flask_bcrypt import Bcrypt
 import math
 import os
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 CORS(app)
 
 MONGODB_URI = os.environ.get("MONGODB_URI")
 MONGODB_DB_NAME = os.environ.get("MONGODB_DB_NAME")
 MONGODB_COLLECTION = os.environ.get("MONGODB_COLLECTION")
-print("[Flask server.py] Flask server connected to " + MONGODB_URI)
+print("[Flask server.py] Flask server connected to " + str(MONGODB_URI))
 
 # return true if the distance between 2 points is less than 100m
 def validateDistance(lat1, lon1, lat2, lon2):
@@ -29,11 +31,14 @@ def validateDistance(lat1, lon1, lat2, lon2):
         return True
     return False
 
+# for testing connection with server
 @app.route('/', methods=['GET'])
 def test():
     print("[Flask server.py] GET path /")
     return {"res": "success"}
 
+# handling login requests from react
+# Input: object of groupNo and password
 @app.route('/login', methods=['POST'])
 def login():
     print("[Flask server.py] POST path /login")
@@ -43,8 +48,25 @@ def login():
     group = datum.find_one({"groupNo": request.json["groupNo"]})
     client.close()
     if(group):
-        if(request.json["password"] == group["password"]):
+        if(bcrypt.check_password_hash(request.json["password"], group["password"])):
             return {"res": "success"}
+    return {"res": "fail"}
+
+# handling create user requests from REST API directly
+# list named as userList containing all user's groupNo and password as object
+@app.route('/createuser', methods=['POST'])
+def create_user():
+    print("[Flask server.py] POST path /createuser")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION]
+    userList = request.json["userList"].copy()
+    for u in userList:
+        u["password"] = bcrypt.generate_password_hash(u["password"])
+    print(userList["userList"])
+    res = datum.insert_many(userList)
+    if res:
+        return {"res": "success"}
     return {"res": "fail"}
 
 if __name__ == "__main__":

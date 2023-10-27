@@ -63,7 +63,7 @@ def create_user():
     userList = request.json["userList"].copy()
     for u in userList:
         u["password"] = bcrypt.generate_password_hash(u["password"])
-    print(userList["userList"])
+    print(userList)
     res = datum.insert_many(userList)
     if res:
         return {"res": "success"}

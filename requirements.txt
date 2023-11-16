@@ -2,3 +2,5 @@ pymongo
 flask
 flask_cors
 flask_bcrypt
+PIL
+matplotlib

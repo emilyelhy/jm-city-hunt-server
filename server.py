@@ -4,6 +4,10 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import math
 import os
+import glob
+from PIL import Image
+import io
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -12,6 +16,7 @@ CORS(app)
 MONGODB_URI = os.environ.get("MONGODB_URI")
 MONGODB_DB_NAME = os.environ.get("MONGODB_DB_NAME")
 MONGODB_COLLECTION = os.environ.get("MONGODB_COLLECTION")
+MONGODB_IMG_COLLECTION = os.environ.get("MONGODB_IMG_COLLECTION")
 print("[Flask server.py] Flask server connected to " + str(MONGODB_URI))
 
 # return true if the distance between 2 points is less than 100m
@@ -88,6 +93,58 @@ def change_password():
         return {"res": False}
     datum.find_one_and_update({"groupNo": request.json["groupNo"]}, {"$set": {"password": bcrypt.generate_password_hash(request.json["newPassword"])}})
     client.close()
+    return {"res": True}
+
+# Upload all images in IMG folder to MongoDB
+# param: N.A.
+# return: true on successful upload and false on failed upload
+@app.route('/uploadimage', methods=['GET'])
+def upload_image():
+    print("[Flask server.py] GET path /uploadimage")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_IMG_COLLECTION]
+    images = []
+    for k in glob.glob('IMG/*.png'):
+        im = Image.open(k)
+        kn, _ = os.path.splitext(os.path.basename(k))
+        image_bytes = io.BytesIO()
+        im.save(image_bytes, format='PNG')
+        image = {
+            'data': image_bytes.getvalue(),
+            'name': kn
+        }
+        images.append(image)
+    res = datum.insert_many(images)
+    client.close()
+    if res:
+        return {"res": True}
+    return {"res": False}
+
+# temp use until front end is updated for image transmission
+@app.route('/showimage', methods=['GET'])
+def show_image():
+    print("[Flask server.py] GET path /showimage")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_IMG_COLLECTION]
+    image = datum.find_one({"name": "Task1"})
+    client.close()
+    pil_img = Image.open(io.BytesIO(image['data']))
+    plt.imshow(pil_img)
+    plt.show()
+    return {"res": True}
+
+# Remove all saved images on MongoDB
+# param: N.A.
+# return: true on successful deletion and false on failed deletion
+@app.route('/clearimage', methods=['GET'])
+def clear_image():
+    print("[Flask server.py] GET path /clearimage")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_IMG_COLLECTION]
+    res = datum.drop()
     return {"res": True}
 
 if __name__ == "__main__":

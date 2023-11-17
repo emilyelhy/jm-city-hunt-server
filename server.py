@@ -15,8 +15,10 @@ CORS(app)
 
 MONGODB_URI = os.environ.get("MONGODB_URI")
 MONGODB_DB_NAME = os.environ.get("MONGODB_DB_NAME")
-MONGODB_COLLECTION = os.environ.get("MONGODB_COLLECTION")
-MONGODB_IMG_COLLECTION = os.environ.get("MONGODB_IMG_COLLECTION")
+MONGODB_COLLECTION_USR = os.environ.get("MONGODB_COLLECTION_USR")
+MONGODB_COLLECTION_CKPT = os.environ.get("MONGODB_COLLECTION_CKPT")
+MONGODB_COLLECTION_SEQ = os.environ.get("MONGODB_COLLECTION_SEQ")
+MONGODB_COLLECTION_IMG = os.environ.get("MONGODB_COLLECTION_IMG")
 print("[Flask server.py] Flask server connected to " + str(MONGODB_URI))
 
 # return true if the distance between 2 points is less than 100m
@@ -50,7 +52,7 @@ def login():
     print("[Flask server.py] POST path /login")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
-    datum = db[MONGODB_COLLECTION]
+    datum = db[MONGODB_COLLECTION_USR]
     group = datum.find_one({"groupNo": request.json["groupNo"]})
     client.close()
     if(group):
@@ -66,7 +68,7 @@ def create_user():
     print("[Flask server.py] POST path /createuser")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
-    datum = db[MONGODB_COLLECTION]
+    datum = db[MONGODB_COLLECTION_USR]
     userList = request.json["userList"].copy()
     for u in userList:
         u["password"] = bcrypt.generate_password_hash(u["password"])
@@ -85,7 +87,7 @@ def change_password():
     print("[Flask server.py] POST path /changepassword")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
-    datum = db[MONGODB_COLLECTION]
+    datum = db[MONGODB_COLLECTION_USR]
     group = datum.find_one({"groupNo": request.json["groupNo"]})
     if (group == None):
         return {"res": False}
@@ -95,7 +97,7 @@ def change_password():
     client.close()
     return {"res": True}
 
-# Upload all images in IMG folder to MongoDB
+# Upload all images in IMG folder to MongoDB [Can only be used on computer locally with /IMG folder existing]
 # param: N.A.
 # return: true on successful upload and false on failed upload
 @app.route('/uploadimage', methods=['GET'])
@@ -103,7 +105,7 @@ def upload_image():
     print("[Flask server.py] GET path /uploadimage")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
-    datum = db[MONGODB_IMG_COLLECTION]
+    datum = db[MONGODB_COLLECTION_IMG]
     images = []
     for k in glob.glob('IMG/*.png'):
         im = Image.open(k)
@@ -112,7 +114,7 @@ def upload_image():
         im.save(image_bytes, format='PNG')
         image = {
             'data': image_bytes.getvalue(),
-            'name': kn
+            'taskNo': kn
         }
         images.append(image)
     res = datum.insert_many(images)
@@ -127,8 +129,8 @@ def show_image():
     print("[Flask server.py] GET path /showimage")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
-    datum = db[MONGODB_IMG_COLLECTION]
-    image = datum.find_one({"name": "Task1"})
+    datum = db[MONGODB_COLLECTION_IMG]
+    image = datum.find_one({"taskNo": "1"})
     client.close()
     pil_img = Image.open(io.BytesIO(image['data']))
     plt.imshow(pil_img)
@@ -143,8 +145,8 @@ def clear_image():
     print("[Flask server.py] GET path /clearimage")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
-    datum = db[MONGODB_IMG_COLLECTION]
-    res = datum.drop()
+    datum = db[MONGODB_COLLECTION_IMG]
+    datum.drop()
     return {"res": True}
 
 if __name__ == "__main__":

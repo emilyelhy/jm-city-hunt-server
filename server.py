@@ -197,13 +197,14 @@ def return_current_checkpoint():
 # Return the required image to React
 # param: ckptNo
 # return: image
-@app.route('/getimage', methods='POST')
+@app.route('/getimage', methods=['POST'])
 def return_image():
     print("[Flask server.py] POST path /getimage")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
     datum = db[MONGODB_COLLECTION_IMG]
     image = datum.find_one({"ckptNo": request.json["ckptNo"]})
+    client.close()
     request.headers["content-type"] = "image/png"
     return {"res": image.data}
 

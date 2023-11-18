@@ -8,6 +8,7 @@ import glob
 from PIL import Image
 import io
 import matplotlib.pyplot as plt
+import base64
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -197,7 +198,7 @@ def return_current_checkpoint():
 
 # Return the required image to React
 # param: ckptNo
-# return: image
+# return: image in byte with base64 encoding
 @app.route('/getimage', methods=['POST'])
 def return_image():
     print("[Flask server.py] POST path /getimage")
@@ -206,8 +207,7 @@ def return_image():
     datum = db[MONGODB_COLLECTION_IMG]
     image = datum.find_one({"ckptNo": request.json["ckptNo"]})
     client.close()
-    image["data"].save("./image.png")
-    return Flask.send_file('./image.png',mimetype = 'image/png',as_attatchment=True)
+    return {"res": base64.b64encode(image["data"])}
 
 if __name__ == "__main__":
     app.run(host="192.168.118.143", port=5000, debug=True)

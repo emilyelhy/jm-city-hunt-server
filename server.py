@@ -19,7 +19,6 @@ MONGODB_COLLECTION_USR = os.environ.get("MONGODB_COLLECTION_USR")
 MONGODB_COLLECTION_CKPT = os.environ.get("MONGODB_COLLECTION_CKPT")
 MONGODB_COLLECTION_SEQ = os.environ.get("MONGODB_COLLECTION_SEQ")
 MONGODB_COLLECTION_IMG = os.environ.get("MONGODB_COLLECTION_IMG")
-print("[Flask server.py] Flask server connected to " + str(MONGODB_URI))
 
 # return true if the distance between 2 points is less than 100m
 def validate_distance(lat1, lon1, lat2, lon2):
@@ -179,20 +178,21 @@ def return_current_checkpoint():
     # get corresponding info from user collection with groupNo
     user = user_datum.find_one({"groupNo": request.json["groupNo"]})
     # get sequence from sequence collection with seqID
-    sequence = seq_datum.find_one({"seqID": user.seqID})
+    sequence = seq_datum.find_one({"seqID": user["seqID"]})
     # compare sequence and completedTasks to get the current ckptNo
-    if len(user.completedTasks) == 0:
-        currentCkptNo = sequence.sequence[0]
+    if len(user["completedTasks"]) == 0:
+        currentCkptNo = sequence["sequence"][0]
     # cases when all tasks are completed
-    elif len(user.completedTasks) == len(sequence.sequence):
+    elif len(user["completedTasks"]) == len(sequence["sequence"]):
         return {"res": False}
     else:
-        currentCkptNo = sequence.sequence[sequence.sequence.index(user.completedTasks[len(user.completedTasks) - 1]) + 1]
+        currentCkptIndex = sequence["sequence"].index(user["completedTasks"][len(user["completedTasks"]) - 1]) + 1
+        currentCkptNo = sequence["sequence"][currentCkptIndex]
     # get ckpt detail from Checkpoint collection with ckptNo
     ckpt = ckpt_datum.find_one({"ckptNo": currentCkptNo})
     # return ckptNo, location, clue, taskContent to React
     client.close()
-    return {"ckptNo": currentCkptNo, "location": ckpt.location, "clue": ckpt.clue, "taskContent": ckpt.taskContent}
+    return {"ckptNo": currentCkptNo, "location": ckpt["location"], "clue": ckpt["clue"], "taskContent": ckpt["taskContent"]}
 
 # Return the required image to React
 # param: ckptNo

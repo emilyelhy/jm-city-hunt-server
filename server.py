@@ -171,12 +171,41 @@ def add_ckpt():
 @app.route('/currentckpt', methods=['POST'])
 def return_current_checkpoint():
     print("[Flask server.py] POST path /currentckpt")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    user_datum = db[MONGODB_COLLECTION_USR]
+    seq_datum = db[MONGODB_COLLECTION_SEQ]
+    ckpt_datum = db[MONGODB_COLLECTION_CKPT]
     # get corresponding info from user collection with groupNo
+    user = user_datum.find_one({"groupNo": request.json["groupNo"]})
     # get sequence from sequence collection with seqID
+    sequence = seq_datum.find_one({"seqID": user.seqID})
     # compare sequence and completedTasks to get the current ckptNo
+    if len(user.completedTasks) == 0:
+        currentCkptNo = sequence.sequence[0]
+    # cases when all tasks are completed
+    elif len(user.completedTasks) == len(sequence.sequence):
+        return {"res": False}
+    else:
+        currentCkptNo = sequence.sequence[sequence.sequence.index(user.completedTasks[len(user.completedTasks) - 1]) + 1]
     # get ckpt detail from Checkpoint collection with ckptNo
-    # get image from Image collection with ckptNo
-    # return ckptNo, location, clue, taskContent, image to React
+    ckpt = ckpt_datum.find_one({"ckptNo": currentCkptNo})
+    # return ckptNo, location, clue, taskContent to React
+    client.close()
+    return {"ckptNo": currentCkptNo, "location": ckpt.location, "clue": ckpt.clue, "taskContent": ckpt.taskContent}
+
+# Return the required image to React
+# param: ckptNo
+# return: image
+@app.route('/getimage', methods='POST')
+def return_image():
+    print("[Flask server.py] POST path /getimage")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_IMG]
+    image = datum.find_one({"ckptNo": request.json["ckptNo"]})
+    request.headers["content-type"] = "image/png"
+    return {"res": image.data}
 
 if __name__ == "__main__":
     app.run(host="192.168.118.143", port=5000, debug=True)

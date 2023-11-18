@@ -114,7 +114,7 @@ def upload_image():
         im.save(image_bytes, format='PNG')
         image = {
             'data': image_bytes.getvalue(),
-            'taskNo': kn
+            'ckptNo': kn
         }
         images.append(image)
     res = datum.insert_many(images)
@@ -130,7 +130,7 @@ def show_image():
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
     datum = db[MONGODB_COLLECTION_IMG]
-    image = datum.find_one({"taskNo": "1"})
+    image = datum.find_one({"ckptNo": "1"})
     client.close()
     pil_img = Image.open(io.BytesIO(image['data']))
     plt.imshow(pil_img)
@@ -147,7 +147,36 @@ def clear_image():
     db = client[MONGODB_DB_NAME]
     datum = db[MONGODB_COLLECTION_IMG]
     datum.drop()
+    client.close()
     return {"res": True}
+
+# Add checkpoint(s) data to MongoDB
+# param: list of object "ckptList" of ckptNo, location {latitude, longitude}, clue, taskContent
+# return: true on successful addition and false on failed addition
+@app.route('/addckpt', methods=['POST'])
+def add_ckpt():
+    print("[Flask server.py] POST path /addckpt")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_CKPT]
+    res = datum.insert_many(request.json["ckptList"])
+    client.close()
+    if res:
+        return {"res": True}
+    return {"res": False}
+
+# Return the current checkpoint data to React
+# param: groupNo
+# return: ckptNo, location {latitude, longitude}, clue, taskContent, image
+@app.route('/currentckpt', methods=['POST'])
+def return_current_checkpoint():
+    print("[Flask server.py] POST path /currentckpt")
+    # get corresponding info from user collection with groupNo
+    # get sequence from sequence collection with seqID
+    # compare sequence and completedTasks to get the current ckptNo
+    # get ckpt detail from Checkpoint collection with ckptNo
+    # get image from Image collection with ckptNo
+    # return ckptNo, location, clue, taskContent, image to React
 
 if __name__ == "__main__":
     app.run(host="192.168.118.143", port=5000, debug=True)

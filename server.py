@@ -207,7 +207,7 @@ def return_image():
     datum = db[MONGODB_COLLECTION_IMG]
     image = datum.find_one({"ckptNo": request.json["ckptNo"]})
     client.close()
-    return {"res": base64.b64encode(image["data"])}
+    return {"res": base64.b64encode(image["data"]).decode("utf-8")}
 
 if __name__ == "__main__":
     app.run(host="192.168.118.143", port=5000, debug=True)

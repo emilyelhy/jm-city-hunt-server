@@ -166,7 +166,7 @@ def add_ckpt():
 
 # Return the current checkpoint data to React
 # param: groupNo
-# return: ckptNo, location {latitude, longitude}, clue, taskContent, image
+# return: ckptNo, location {latitude, longitude}, clue, taskContent if current ckpt exists, {} if all tasks are completed
 @app.route('/currentckpt', methods=['POST'])
 def return_current_checkpoint():
     print("[Flask server.py] POST path /currentckpt")
@@ -184,7 +184,8 @@ def return_current_checkpoint():
         currentCkptNo = sequence["sequence"][0]
     # cases when all tasks are completed
     elif len(user["completedTasks"]) == len(sequence["sequence"]):
-        return {"res": False}
+        client.close()
+        return {}
     else:
         currentCkptIndex = sequence["sequence"].index(user["completedTasks"][len(user["completedTasks"]) - 1]) + 1
         currentCkptNo = sequence["sequence"][currentCkptIndex]
@@ -205,8 +206,8 @@ def return_image():
     datum = db[MONGODB_COLLECTION_IMG]
     image = datum.find_one({"ckptNo": request.json["ckptNo"]})
     client.close()
-    request.headers["content-type"] = "image/png"
-    return {"res": image.data}
+    image["data"].save("./image.png")
+    return Flask.send_file('./image.png',mimetype = 'image/png',as_attatchment=True)
 
 if __name__ == "__main__":
     app.run(host="192.168.118.143", port=5000, debug=True)

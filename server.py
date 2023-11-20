@@ -213,7 +213,7 @@ def return_image():
 # determine whether the user is in the range of the checkpoint
 # param: object of latitude, longitude, ckptNo and groupNo
 # return: true and set visitedCkpts if the location is in range of the checkpoint, else false
-@app.route('/validatelocation', methods=['GET'])
+@app.route('/validatelocation', methods=['POST'])
 def validate_location():
     print("[Flask server.py] POST path /validatelocation")
     client = MongoClient(MONGODB_URI)

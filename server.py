@@ -97,7 +97,7 @@ def change_password():
     client.close()
     return {"res": True}
 
-# Upload all images in IMG folder to MongoDB [Can only be used on computer locally with /IMG folder existing]
+# upload all images in IMG folder to MongoDB [Can only be used on computer locally with /IMG folder existing]
 # param: N.A.
 # return: true on successful upload and false on failed upload
 @app.route('/uploadimage', methods=['GET'])
@@ -137,7 +137,7 @@ def show_image():
     plt.show()
     return {"res": True}
 
-# Remove all saved images on MongoDB
+# remove all saved images on MongoDB
 # param: N.A.
 # return: true on successful deletion and false on failed deletion
 @app.route('/clearimage', methods=['GET'])
@@ -150,7 +150,7 @@ def clear_image():
     client.close()
     return {"res": True}
 
-# Add checkpoint(s) data to MongoDB
+# add checkpoint(s) data to MongoDB
 # param: list of object "ckptList" of ckptNo, location {latitude, longitude}, clue, taskContent
 # return: true on successful addition and false on failed addition
 @app.route('/addckpt', methods=['POST'])
@@ -165,8 +165,8 @@ def add_ckpt():
         return {"res": True}
     return {"res": False}
 
-# Return the current checkpoint data to React
-# param: groupNo
+# return the current checkpoint data to React
+# param: object of groupNo
 # return: ckptNo, location {latitude, longitude}, clue, taskContent if current ckpt exists, {} if all tasks are completed
 @app.route('/currentckpt', methods=['POST'])
 def return_current_checkpoint():
@@ -180,15 +180,15 @@ def return_current_checkpoint():
     user = user_datum.find_one({"groupNo": request.json["groupNo"]})
     # get sequence from sequence collection with seqID
     sequence = seq_datum.find_one({"seqID": user["seqID"]})
-    # compare sequence and completedTasks to get the current ckptNo
-    if len(user["completedTasks"]) == 0:
+    # compare sequence and visitedCkpts to get the current ckptNo
+    if len(user["visitedCkpts"]) == 0:
         currentCkptNo = sequence["sequence"][0]
     # cases when all tasks are completed
-    elif len(user["completedTasks"]) == len(sequence["sequence"]):
+    elif len(user["visitedCkpts"]) == len(sequence["sequence"]):
         client.close()
         return {}
     else:
-        currentCkptIndex = sequence["sequence"].index(user["completedTasks"][len(user["completedTasks"]) - 1]) + 1
+        currentCkptIndex = sequence["sequence"].index(user["visitedCkpts"][len(user["visitedCkpts"]) - 1]) + 1
         currentCkptNo = sequence["sequence"][currentCkptIndex]
     # get ckpt detail from Checkpoint collection with ckptNo
     ckpt = ckpt_datum.find_one({"ckptNo": currentCkptNo})
@@ -196,8 +196,8 @@ def return_current_checkpoint():
     client.close()
     return {"ckptNo": currentCkptNo, "location": ckpt["location"], "clue": ckpt["clue"], "taskContent": ckpt["taskContent"]}
 
-# Return the required image to React
-# param: ckptNo
+# return the required image to React
+# param: object of ckptNo
 # return: image in byte with base64 encoding
 @app.route('/getimage', methods=['POST'])
 def return_image():
@@ -208,6 +208,27 @@ def return_image():
     image = datum.find_one({"ckptNo": request.json["ckptNo"]})
     client.close()
     return {"res": base64.b64encode(image["data"]).decode("utf-8")}
+
+# determine whether the user is in the range of the checkpoint
+# param: object of latitude, longitude, ckptNo and groupNo
+# return: true and set visitedCkpts if the location is in range of the checkpoint, else false
+@app.route('/validatelocation', methods=['GET'])
+def validate_location():
+    print("[Flask server.py] POST path /validatelocation")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    ckpt_datum = db[MONGODB_COLLECTION_CKPT]
+    user_datum = db[MONGODB_COLLECTION_USR]
+    current_ckpt = ckpt_datum.find_one({"ckptNo": request.json["ckptNo"]})
+    if not validate_distance(request.json["latitude"], request.json["longitude"], current_ckpt["location"]["latitude"], current_ckpt["location"]["longitude"]):
+        client.close()
+        return {"res": False}
+    user = user_datum.find_one({"groupNo": request.json["groupNo"]})
+    temp_visitedCkpts = user["visitedCkpts"].copy()
+    temp_visitedCkpts.append(request.json["ckptNo"])
+    user_datum.find_one_and_update({"groupNo": request.json["groupNo"]}, {"$set": {"visitedCkpts": temp_visitedCkpts}})
+    client.close()
+    return {"res": True}
 
 if __name__ == "__main__":
     app.run(host="192.168.118.143", port=5000, debug=True)

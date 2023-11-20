@@ -34,6 +34,7 @@ def validate_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.asin(math.sqrt(a))
     # Distance in km
     distance = radius * c
+    print("[Flask server.py] validate_distance result in (km):", distance)
     if distance <= 0.1:
         return True
     return False

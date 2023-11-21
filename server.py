@@ -231,5 +231,31 @@ def validate_location():
     client.close()
     return {"res": True}
 
+# return all ckpts in list in ascending order of ckptNo
+# param: N.A.
+# return: list of objects with name "ckptList"
+@app.route('/allckpt', methods=['GET'])
+def return_all_ckpt():
+    print("[Flask server.py] GET path /allckpt")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_CKPT]
+    ckptList = datum.find().sort("ckptNo")
+    client.close()
+    return {"ckptList": ckptList}
+
+# return visitedCkpts and completedTasks of a certain group to React
+# param: object of groupNo
+# return: objects with 2 lists visitedCkpts & completedTasks
+@app.route('/progress', methods=['POST'])
+def progress():
+    print("[Flask server.py] POST path /progress")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_USR]
+    user = datum.find_one({"groupNo": request.json["groupNo"]})
+    client.close()
+    return {"completedTasks": user["completedTasks"], "visitedCkpts": user["visitedCkpts"]}
+
 if __name__ == "__main__":
     app.run(host="192.168.118.143", port=5000, debug=True)

@@ -21,8 +21,10 @@ MONGODB_COLLECTION_CKPT = os.environ.get("MONGODB_COLLECTION_CKPT")
 MONGODB_COLLECTION_SEQ = os.environ.get("MONGODB_COLLECTION_SEQ")
 MONGODB_COLLECTION_IMG = os.environ.get("MONGODB_COLLECTION_IMG")
 
-# return true if the distance between 2 points is less than 100m
-def validate_distance(lat1, lon1, lat2, lon2):
+CKPT_RANGE = 0.05 # in km
+
+# return distance of 2 coordinates in km
+def cal_distance(lat1, lon1, lat2, lon2):
     # Radius of the Earth in km
     radius = 6371
     # Convert latitude and longitude to radians
@@ -34,10 +36,8 @@ def validate_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.asin(math.sqrt(a))
     # Distance in km
     distance = radius * c
-    print("[Flask server.py] validate_distance result in (km):", distance)
-    if distance <= 0.1:
-        return True
-    return False
+    print("[Flask server.py] cal_distance result in (km):", distance)
+    return distance
 
 # for testing connection with server
 @app.route('/', methods=['GET'])
@@ -221,7 +221,7 @@ def validate_location():
     ckpt_datum = db[MONGODB_COLLECTION_CKPT]
     user_datum = db[MONGODB_COLLECTION_USR]
     current_ckpt = ckpt_datum.find_one({"ckptNo": request.json["ckptNo"]})
-    if not validate_distance(request.json["latitude"], request.json["longitude"], current_ckpt["location"]["latitude"], current_ckpt["location"]["longitude"]):
+    if cal_distance(request.json["latitude"], request.json["longitude"], current_ckpt["location"]["latitude"], current_ckpt["location"]["longitude"]) > CKPT_RANGE:
         client.close()
         return {"res": False}
     user = user_datum.find_one({"groupNo": request.json["groupNo"]})
@@ -256,6 +256,33 @@ def progress():
     user = datum.find_one({"groupNo": request.json["groupNo"]})
     client.close()
     return {"completedTasks": user["completedTasks"], "visitedCkpts": user["visitedCkpts"]}
+
+# update coordinates of a certain ckpt
+# param: object of ckptNo, latitude, and longitude
+# return: true on successful update and false on failed update
+@app.route('/calibrate', methods=['POST'])
+def calibrate_ckpt():
+    print("[Flask server.py] POST path /calibrate")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_CKPT]
+    datum.find_one_and_update({"ckptNo": request.json["ckptNo"]}, {"$set": {"location": {"latitude": request.json["latitude"], "longitude": request.json["longitude"]}}})
+    client.close()
+    return {"res": True}
+
+# return distance between current position and a specified ckpt to React
+# param: object of ckptNo, latitude, and longitude
+# return: object of distance
+@app.route('/distance', methods=['POST'])
+def return_distance():
+    print("[Flask server.py] POST path /distance")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_CKPT]
+    ckpt = datum.find_one({"ckptNo": request.json["ckptNo"]})
+    client.close()
+    distance = cal_distance(request.json["latitude"], request.json["longitude"], ckpt["location"]["latitude"], ckpt["location"]["longitude"])
+    return {"distance": distance}
 
 if __name__ == "__main__":
     app.run(host="192.168.118.143", port=5000, debug=True)

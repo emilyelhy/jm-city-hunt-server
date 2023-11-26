@@ -240,7 +240,7 @@ def return_all_ckpt():
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
     datum = db[MONGODB_COLLECTION_CKPT]
-    ckptList = list(datum.find({}, {'_id': False}).sort("ckptNo"))
+    ckptList = list(datum.find({}, {'_id': False}).sort("ckptNo").collation({"locale": "en_US", "numericOrdering": True}))
     client.close()
     return {"ckptList": ckptList}
 

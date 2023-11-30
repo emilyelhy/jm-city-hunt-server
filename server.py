@@ -62,7 +62,7 @@ def login():
     return {"res": False}
 
 # handling create user requests from REST API directly
-# param: list named as userList containing all user's groupNo and password as object
+# param: list named as userList containing all user's groupNo, password, type, and memberList as object
 # return: true on successful user creation and false on failed creation
 @app.route('/createuser', methods=['POST'])
 def create_user():
@@ -73,6 +73,8 @@ def create_user():
     userList = request.json["userList"].copy()
     for u in userList:
         u["password"] = bcrypt.generate_password_hash(u["password"])
+        u["completedTask"] = []
+        u["visitedCkpts"] = []
     print(userList)
     res = datum.insert_many(userList)
     client.close()

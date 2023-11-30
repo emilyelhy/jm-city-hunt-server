@@ -82,6 +82,19 @@ def create_user():
         return {"res": True}
     return {"res": False}
 
+# return the next available group no
+# param: N.A.
+# return: object of groupNo
+@app.route('/groupNo', methods=['GET'])
+def next_available_groupNo():
+    print("[Flask server.py] GET path /groupNo")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_USR]
+    count = datum.count_documents({})
+    client.close()
+    return {"groupNo": count + 1}
+
 # handling password changing request from react
 # param: object of groupNo, oldPassword, and newPassword
 # return: true on successful update and false on failed update

@@ -95,6 +95,19 @@ def next_available_groupNo():
     client.close()
     return {"groupNo": count + 1}
 
+# return the memberList to react
+# param: object of groupNo
+# return: object of memberList
+@app.route('/memberlist', methods=['POST'])
+def return_member_list():
+    print("[Flask server.py] POST path /memberlist")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_USR]
+    user = datum.find_one({"groupNo": request.json["groupNo"]})
+    client.close()
+    return {"memberList": user["members"]}
+
 # handling password changing request from react
 # param: object of groupNo, oldPassword, and newPassword
 # return: true on successful update and false on failed update

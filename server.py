@@ -108,6 +108,19 @@ def return_member_list():
     client.close()
     return {"memberList": user["members"]}
 
+# handling member changing request from react
+# param: object of memberList and groupNo
+# return: true on successful update and false on failed update
+@app.route('/updatemember', methods=['POST'])
+def update_member():
+    print("[Flask server.py] POST path /updatemember")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_USR]
+    datum.find_one_and_update({"groupNo": request.json["groupNo"]}, {"$set": {"members": request.json["memberList"]}})
+    client.close()
+    return {"res": True}
+
 # handling password changing request from react
 # param: object of groupNo, oldPassword, and newPassword
 # return: true on successful update and false on failed update

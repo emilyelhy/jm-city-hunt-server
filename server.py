@@ -274,7 +274,7 @@ def validate_location():
 
 # return all ckpts in list in ascending order of ckptNo
 # param: N.A.
-# return: list of objects with name "ckptList"
+# return: object of list of objects with name "ckptList"
 @app.route('/allckpt', methods=['GET'])
 def return_all_ckpt():
     print("[Flask server.py] GET path /allckpt")
@@ -282,6 +282,19 @@ def return_all_ckpt():
     db = client[MONGODB_DB_NAME]
     datum = db[MONGODB_COLLECTION_CKPT]
     ckptList = list(datum.find({}, {'_id': False}).sort("ckptNo").collation({"locale": "en_US", "numericOrdering": True}))
+    client.close()
+    return {"ckptList": ckptList}
+
+# return all ckpts in safe mode (without location info) in list (ascending order of ckptNo)
+# param: N.A.
+# return: object of list of objects with name "ckptList"
+@app.route('/allckptsafe', methods=['GET'])
+def return_all_ckpt_safe():
+    print("[Flask server.py] GET path /allckptsafe")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_CKPT]
+    ckptList = list(datum.find({}, {'_id': False, 'location': False}).sort("ckptNo").collation({"locale": "en_US", "numericOrdering": True}))
     client.close()
     return {"ckptList": ckptList}
 

@@ -326,6 +326,19 @@ def progress():
     client.close()
     return {"completedTask": user["completedTask"], "visitedCkpts": user["visitedCkpts"]}
 
+# return type of a certain group to React
+# param: object of groupNo
+# return: object of type
+@app.route('/usertype', methods=['POST'])
+def get_user_type():
+    print("[Flask server.py] POST path /usertype")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_USR]
+    user = datum.find_one({"groupNo": request.json["groupNo"]})
+    client.close()
+    return {"type": user["type"]}
+
 # update coordinates of a certain ckpt
 # param: object of ckptNo, type, latitude, and longitude
 # return: true on successful update and false on failed update

@@ -251,6 +251,22 @@ def return_image():
     client.close()
     return {"res": base64.b64encode(image["data"]).decode("utf-8")}
 
+# return all images for all ckpts to React
+# param: N.A.
+# return: object of list of object with name imageList (image in byte with base64 encoding)
+@app.route('/getallimage', methods=['GET'])
+def return_all_image():
+    print("[Flask server.py] GET path /getallimage")
+    client = MongoClient(MONGODB_URI)
+    db = client[MONGODB_DB_NAME]
+    datum = db[MONGODB_COLLECTION_IMG]
+    images = list(datum.find({}, {'_id': False}).sort("ckptNo").collation({"locale": "en_US", "numericOrdering": True}))
+    imageList = images.copy()
+    for idx, im in enumerate(imageList):
+        print(idx)
+        im["data"] = base64.b64encode(images[idx]["data"]).decode("utf-8")
+    return {"imageList": imageList}
+
 # determine whether the user is in the range of the checkpoint
 # param: object of latitude, longitude, ckptNo and groupNo
 # return: true and set visitedCkpts if the location is in range of the checkpoint, else false

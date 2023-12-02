@@ -309,7 +309,7 @@ def progress():
     datum = db[MONGODB_COLLECTION_USR]
     user = datum.find_one({"groupNo": request.json["groupNo"]})
     client.close()
-    return {"completedTasks": user["completedTasks"], "visitedCkpts": user["visitedCkpts"]}
+    return {"completedTask": user["completedTask"], "visitedCkpts": user["visitedCkpts"]}
 
 # update coordinates of a certain ckpt
 # param: object of ckptNo, type, latitude, and longitude

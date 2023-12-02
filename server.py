@@ -263,7 +263,6 @@ def return_all_image():
     images = list(datum.find({}, {'_id': False}).sort("ckptNo").collation({"locale": "en_US", "numericOrdering": True}))
     imageList = images.copy()
     for idx, im in enumerate(imageList):
-        print(idx)
         im["data"] = base64.b64encode(images[idx]["data"]).decode("utf-8")
     return {"imageList": imageList}
 

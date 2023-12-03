@@ -270,7 +270,7 @@ def return_all_image():
     images = list(datum.find({}, {'_id': False}).sort("ckptNo").collation({"locale": "en_US", "numericOrdering": True}))
     imageList = images.copy()
     for idx, im in enumerate(imageList):
-        im["data"][request.json["userType"]] = base64.b64encode(images[idx]["data"][request.json["userType"]]).decode("utf-8")
+        im["data"] = base64.b64encode(images[idx]["data"][request.json["userType"]]).decode("utf-8")
     return {"imageList": imageList}
 
 # determine whether the user is in the range of the checkpoint

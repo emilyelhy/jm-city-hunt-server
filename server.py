@@ -154,11 +154,18 @@ def upload_image():
         kn, _ = os.path.splitext(os.path.basename(k))
         image_bytes = io.BytesIO()
         im.save(image_bytes, format='PNG')
-        image = {
-            'data': image_bytes.getvalue(),
-            'ckptNo': kn
-        }
-        images.append(image)
+        prevImageObj = {}
+        for image in images:
+            if image["ckptNo"] == kn.split("-")[0]:
+                prevImageObj = image
+        if prevImageObj:
+            prevImageObj['data'][kn.split("-")[1]] = image_bytes.getvalue()
+        else:
+            image = {
+                'data':  {kn.split("-")[1]: image_bytes.getvalue()},
+                'ckptNo': kn.split("-")[0]
+            }
+            images.append(image)
     res = datum.insert_many(images)
     client.close()
     if res:
@@ -263,7 +270,8 @@ def return_all_image():
     images = list(datum.find({}, {'_id': False}).sort("ckptNo").collation({"locale": "en_US", "numericOrdering": True}))
     imageList = images.copy()
     for idx, im in enumerate(imageList):
-        im["data"] = base64.b64encode(images[idx]["data"]).decode("utf-8")
+        im["data"]["Y"] = base64.b64encode(images[idx]["data"]["Y"]).decode("utf-8")
+        im["data"]["F"] = base64.b64encode(images[idx]["data"]["F"]).decode("utf-8")
     return {"imageList": imageList}
 
 # determine whether the user is in the range of the checkpoint

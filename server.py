@@ -258,20 +258,19 @@ def return_image():
     client.close()
     return {"res": base64.b64encode(image["data"]).decode("utf-8")}
 
-# return all images for all ckpts to React
-# param: N.A.
+# return all images for all ckpts of a certain userType to React
+# param: object of userType
 # return: object of list of object with name imageList (image in byte with base64 encoding)
-@app.route('/getallimage', methods=['GET'])
+@app.route('/getallimage', methods=['POST'])
 def return_all_image():
-    print("[Flask server.py] GET path /getallimage")
+    print("[Flask server.py] POST path /getallimage")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB_NAME]
     datum = db[MONGODB_COLLECTION_IMG]
     images = list(datum.find({}, {'_id': False}).sort("ckptNo").collation({"locale": "en_US", "numericOrdering": True}))
     imageList = images.copy()
     for idx, im in enumerate(imageList):
-        im["data"]["Y"] = base64.b64encode(images[idx]["data"]["Y"]).decode("utf-8")
-        im["data"]["F"] = base64.b64encode(images[idx]["data"]["F"]).decode("utf-8")
+        im["data"][request.json["userType"]] = base64.b64encode(images[idx]["data"][request.json["userType"]]).decode("utf-8")
     return {"imageList": imageList}
 
 # determine whether the user is in the range of the checkpoint

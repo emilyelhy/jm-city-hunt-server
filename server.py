@@ -375,7 +375,8 @@ def return_distance():
     client.close()
     distanceY = cal_distance(request.json["latitude"], request.json["longitude"], ckpt["location"]["Y"]["latitude"], ckpt["location"]["Y"]["longitude"])
     distanceF = cal_distance(request.json["latitude"], request.json["longitude"], ckpt["location"]["F"]["latitude"], ckpt["location"]["F"]["longitude"])
-    return {"distanceY": distanceY, "distanceF": distanceF}
+    distanceE = cal_distance(request.json["latitude"], request.json["longitude"], ckpt["location"]["E"]["latitude"], ckpt["location"]["E"]["longitude"])
+    return {"distanceY": distanceY, "distanceF": distanceF, "distanceE": distanceE}
 
 if __name__ == "__main__":
-    app.run(host="192.168.118.143", port=5000, debug=True)
+    app.run(host="192.168.118.193", port=5000, debug=True)

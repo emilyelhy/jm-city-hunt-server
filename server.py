@@ -359,6 +359,8 @@ def calibrate_ckpt():
         datum.find_one_and_update({"ckptNo": request.json["ckptNo"]}, {"$set": {"location.Y": {"latitude": request.json["latitude"], "longitude": request.json["longitude"]}}})
     elif request.json["type"] == "F":
         datum.find_one_and_update({"ckptNo": request.json["ckptNo"]}, {"$set": {"location.F": {"latitude": request.json["latitude"], "longitude": request.json["longitude"]}}})
+    elif request.json["type"] == "E":
+        datum.find_one_and_update({"ckptNo": request.json["ckptNo"]}, {"$set": {"location.E": {"latitude": request.json["latitude"], "longitude": request.json["longitude"]}}})
     client.close()
     return {"res": True}
 
